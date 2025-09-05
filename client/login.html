@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>Login</h2>
+
+  <form id="loginForm">
+    <input type="email" id="email" name="email" placeholder="Email" required><br>
+    <input type="password" id="password" name="password" placeholder="Password" required><br>
+    <button type="submit">Login</button>
+  </form>
+
+  <p>Don't have an account? <a href="register.html">Register here</a></p>
+
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      try {
+        // Send login request to backend
+        const res = await fetch("http://localhost:5000/api/users/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const responseText = await res.text();
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          data = { message: responseText };
+        }
+
+        if (res.ok) {
+          // ✅ Store JWT for authentication
+          localStorage.setItem("token", data.token);
+
+          // ✅ Save current logged-in email
+          localStorage.setItem("currentUser", email);
+
+          // ✅ Save role directly (backend sends role as top-level field)
+          localStorage.setItem("role", data.role);
+
+          // ✅ Save name so profile shows correctly (fallback to existing localStorage)
+          localStorage.setItem("name", data.user?.name || localStorage.getItem("name") || "Not Available");
+
+          // ✅ Keep all users in localStorage
+          let users = JSON.parse(localStorage.getItem("users")) || {};
+          if (!users[email]) {
+            users[email] = { 
+              profile: { 
+                name: data.user?.name || localStorage.getItem("name") || "Not Available", 
+                email, 
+                role: data.role 
+              }, 
+              appliedJobs: [] 
+            };
+          }
+          localStorage.setItem("users", JSON.stringify(users));
+
+          alert("✅ Login successful!");
+
+          // ✅ Redirect based on role
+          if (data.role === "employer") {
+            window.location.href = "employer-dashboard.html";
+          } else {
+            window.location.href = "dashboard.html";
+          }
+
+        } else {
+          alert(data.message || "Login failed");
+        }
+      } catch (err) {
+        alert("Error logging in: " + err.message);
+      }
+    });
+  </script>
+</body>
+</html>

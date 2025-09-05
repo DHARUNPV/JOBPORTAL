@@ -1,0 +1,25 @@
+{
+  "name": "jobportal",
+  "version": "1.0.0",
+  "description": "A simple full-stack job portal application",
+  "main": "server/app.js",
+  "scripts": {
+    "start": "node server/app.js",
+    "dev": "kill-port 5001 && nodemon server/app.js"
+  },
+  "keywords": [],
+  "author": "YourName",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.8.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

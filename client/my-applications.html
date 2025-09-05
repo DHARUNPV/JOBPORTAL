@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Applications - Job Portal</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>My Job Applications</h1>
+  <button id="logoutBtn">Logout</button>
+  <div id="applicationsList"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Logout button
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+      });
+
+      // Function to display applications
+      function displayApplications(applications) {
+        const container = document.getElementById('applicationsList');
+
+        if (!applications.length) {
+          container.innerHTML = '<p>You have not applied to any jobs yet.</p>';
+          return;
+        }
+
+        container.innerHTML = applications.map(app => `
+          <div class="application-card">
+            <h3>${app.job.title}</h3>
+            <p><strong>Company:</strong> ${app.job.company || 'N/A'}</p>
+            <p><strong>Location:</strong> ${app.job.location || 'N/A'}</p>
+            <p><strong>Status:</strong> ${app.status}</p>
+            <p><strong>Applied on:</strong> ${new Date(app.appliedAt).toLocaleDateString()}</p>
+            <p><strong>Cover Letter:</strong> ${app.coverLetter || 'None'}</p>
+          </div>
+        `).join('');
+      }
+      fetch('http://localhost:5000/api/applications/my-applications', {
+        method: "GET",
+        headers: {
+          'Authorization': `Bearer ${token}`,   // ✅ fixed
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(async (res) => {
+        const text = await res.text();  // get raw response text
+
+        try {
+          const data = JSON.parse(text);  // try to parse JSON
+          displayApplications(data);
+        } catch (err) {
+          console.error('Received non-JSON response from server:');
+          console.log(text);  // log the actual response text (probably an HTML page)
+          alert('Error: Received unexpected response from server. Check console for details.');
+        }
+      })
+      .catch(err => {
+        console.error('Fetch error:', err);
+        document.getElementById('applicationsList').innerHTML = '<p>Error loading your applications.</p>';
+      });
+    });
+  </script>
+</body>
+</html>

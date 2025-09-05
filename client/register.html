@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>Register</h2>
+  <form id="registerForm">
+    <input type="text" placeholder="Full Name" name="name" required autocomplete="name"><br>
+    <input type="text" placeholder="Username" name="username" required autocomplete="username"><br>
+    <input type="email" placeholder="Email" name="email" required autocomplete="email"><br>
+    <input type="password" placeholder="Password" name="password" required autocomplete="current-password"><br>
+    
+    <select name="role" required>
+      <option value="">Select Role</option>
+      <option value="seeker">Job Seeker</option>
+      <option value="employer">Employer</option>
+    </select><br>
+    
+    <button type="submit">Register</button>
+  </form>
+
+  <p>Already have an account? <a href="login.html">Login here</a></p>
+
+  <script>
+    const form = document.getElementById("registerForm");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const name = form.name.value.trim();
+      const username = form.username.value.trim();
+      const email = form.email.value.trim();
+      const password = form.password.value.trim();
+      const role = form.role.value;
+
+      if (!name || !username || !email || !password || !role) {
+        alert("All fields are required");
+        return;
+      }
+
+      try {
+        const response = await fetch("http://localhost:5000/api/users/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, username, email, password, role })
+        });
+
+        const responseText = await response.text();
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          data = { message: responseText };
+        }
+
+        if (response.status === 409) {
+          alert(data.message || "User with this email or username already exists.");
+        } else if (response.ok) {
+          // ✅ Save name in localStorage so profile shows correctly
+          localStorage.setItem("name", name);
+          localStorage.setItem("currentUser", email);
+          localStorage.setItem("role", role);
+
+          alert("✅ Registration successful!");
+          window.location.href = "login.html";
+        } else {
+          alert(data.message || "Registration failed");
+        }
+      } catch (error) {
+        alert("Error: " + error.message);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Job Portal Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .job-card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 5px; }
+    #applicationsSection { display:none; border:1px solid #aaa; padding:15px; margin-top:20px; }
+    .top-right-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    .top-right-btn:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dashboard</h1>
+  <button id="logoutBtn">Logout</button>
+  <button id="viewProfileBtn" class="top-right-btn">My Profile</button>
+
+  <!-- ✅ Profile Section -->
+  <div id="profileSection" style="display:none; margin-top:60px; border:1px solid #ccc; padding:15px;">
+    <h2>My Profile</h2>
+
+    <!-- Edit Profile Form -->
+    <form id="profileForm">
+      <input type="text" id="profileName" placeholder="Full Name" required><br>
+      <input type="text" id="profilePhone" placeholder="Phone"><br>
+      <input type="text" id="profileSkills" placeholder="Skills"><br>
+      <input type="number" id="profileExperience" placeholder="Experience (years)"><br>
+      <input type="text" id="profileEducation" placeholder="Education"><br>
+      <button type="submit">Save Profile</button>
+    </form>
+
+    <!-- View Profile -->
+    <div id="viewProfile" style="display:none; margin-top:15px;">
+      <p><strong>Name:</strong> <span id="pName"></span></p>
+      <p><strong>Email:</strong> <span id="pEmail"></span></p>
+      <p><strong>Phone:</strong> <span id="pPhone"></span></p>
+      <p><strong>Skills:</strong> <span id="pSkills"></span></p>
+      <p><strong>Experience:</strong> <span id="pExperience"></span> years</p>
+      <p><strong>Education:</strong> <span id="pEducation"></span></p>
+      <button id="editProfileBtn">Edit Profile</button>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Search + Filter -->
+  <section>
+    <h2>Find Jobs</h2>
+    <input type="text" id="searchInput" placeholder="Search by job title or keyword">
+    <input type="text" id="locationFilter" placeholder="Filter by location">
+    <button onclick="filterJobs()">Search</button>
+  </section>
+
+  <!-- Job Listings -->
+  <section>
+    <h2>Available Jobs</h2>
+    <div id="jobsList"></div>
+    <button id="viewApplicationsBtn" style="margin-top:15px;">My Applications</button>
+  </section>
+
+  <!-- My Applications Section -->
+  <section id="applicationsSection">
+    <h2>My Applications</h2>
+    <div id="applicationsList"></div>
+    <button onclick="closeApplications()">Close</button>
+  </section>
+
+  <script>
+    let allJobs = []; 
+    let currentUserEmail = localStorage.getItem("currentUser");
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('token');
+      if (!token || !currentUserEmail) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Logout
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('currentUser');
+        window.location.href = 'login.html';
+      });
+
+      // === PROFILE SECTION ===
+      const viewProfileBtn = document.getElementById("viewProfileBtn");
+      const profileSection = document.getElementById("profileSection");
+      const profileForm = document.getElementById("profileForm");
+      const viewProfile = document.getElementById("viewProfile");
+
+      const pName = document.getElementById("pName");
+      const pEmail = document.getElementById("pEmail");
+      const pPhone = document.getElementById("pPhone");
+      const pSkills = document.getElementById("pSkills");
+      const pExperience = document.getElementById("pExperience");
+      const pEducation = document.getElementById("pEducation");
+
+      // Open profile section
+      viewProfileBtn.addEventListener("click", () => {
+        profileSection.style.display = "block";
+
+        const users = JSON.parse(localStorage.getItem("users")) || {};
+        const profile = users[currentUserEmail]?.profile;
+
+        if (profile) {
+          // show profile
+          pName.textContent = profile.name || "";
+          pEmail.textContent = currentUserEmail;
+          pPhone.textContent = profile.phone || "Not provided";
+          pSkills.textContent = profile.skills || "Not provided";
+          pExperience.textContent = profile.experience || "0";
+          pEducation.textContent = profile.education || "Not provided";
+
+          profileForm.style.display = "none";
+          viewProfile.style.display = "block";
+        } else {
+          // show empty form
+          profileForm.style.display = "block";
+          viewProfile.style.display = "none";
+        }
+      });
+
+      // Save profile
+      profileForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById("profileName").value.trim();
+        const phone = document.getElementById("profilePhone").value.trim();
+        const skills = document.getElementById("profileSkills").value.trim();
+        const experience = document.getElementById("profileExperience").value.trim();
+        const education = document.getElementById("profileEducation").value.trim();
+
+        let users = JSON.parse(localStorage.getItem("users")) || {};
+        if (!users[currentUserEmail]) users[currentUserEmail] = {};
+        users[currentUserEmail].profile = { name, phone, skills, experience, education };
+
+        localStorage.setItem("users", JSON.stringify(users));
+
+        alert("Profile saved!");
+        profileForm.style.display = "none";
+        viewProfile.style.display = "block";
+
+        // update display
+        pName.textContent = name;
+        pEmail.textContent = currentUserEmail;
+        pPhone.textContent = phone || "Not provided";
+        pSkills.textContent = skills || "Not provided";
+        pExperience.textContent = experience || "0";
+        pEducation.textContent = education || "Not provided";
+      });
+
+      // Edit profile
+      document.getElementById("editProfileBtn").addEventListener("click", () => {
+        const users = JSON.parse(localStorage.getItem("users")) || {};
+        const profile = users[currentUserEmail]?.profile || {};
+
+        document.getElementById("profileName").value = profile.name || "";
+        document.getElementById("profilePhone").value = profile.phone || "";
+        document.getElementById("profileSkills").value = profile.skills || "";
+        document.getElementById("profileExperience").value = profile.experience || "";
+        document.getElementById("profileEducation").value = profile.education || "";
+
+        profileForm.style.display = "block";
+        viewProfile.style.display = "none";
+      });
+
+      // === JOBS SECTION ===
+      fetch('http://localhost:5000/api/jobs', {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(jobs => {
+        allJobs = jobs;
+        renderJobs(allJobs);
+      })
+      .catch(err => {
+        console.error('Error fetching jobs:', err);
+        document.getElementById('jobsList').innerHTML = '<p>Error loading jobs.</p>';
+      });
+
+      // View Applications
+      document.getElementById("viewApplicationsBtn").addEventListener("click", () => {
+        const apps = JSON.parse(localStorage.getItem(`applications_${currentUserEmail}`)) || [];
+        const list = document.getElementById("applicationsList");
+        list.innerHTML = "";
+
+        if (apps.length === 0) {
+          list.innerHTML = "<p>No applications found.</p>";
+        } else {
+          apps.forEach(app => {
+            const div = document.createElement("div");
+            div.classList.add("job-card");
+            div.innerHTML = `
+              <h3>${app.title}</h3>
+              <p><strong>${app.company}</strong> - ${app.location}</p>
+              <p><em>Cover Letter:</em> ${app.coverLetter}</p>
+            `;
+            list.appendChild(div);
+          });
+        }
+
+        document.getElementById("applicationsSection").style.display = "block";
+      });
+    });
+
+    // Render jobs
+    function renderJobs(jobs) {
+      const jobsList = document.getElementById('jobsList');
+      jobsList.innerHTML = '';
+
+      if (!jobs.length) {
+        jobsList.innerHTML = '<p>No jobs available right now.</p>';
+        return;
+      }
+
+      jobs.forEach(job => {
+        const jobDiv = document.createElement('div');
+        jobDiv.classList.add('job-card');
+        jobDiv.innerHTML = `
+          <h3>${job.title}</h3>
+          <p><strong>${job.company}</strong> - ${job.location}</p>
+          <p>${job.description}</p>
+          <button onclick="applyJob('${job._id}', '${job.title}', '${job.company}', '${job.location}')">Apply</button>
+        `;
+        jobsList.appendChild(jobDiv);
+      });
+    }
+
+    // Filter jobs
+    function filterJobs() {
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      const location = document.getElementById("locationFilter").value.toLowerCase();
+      const filtered = allJobs.filter(job => {
+        const title = job.title?.toLowerCase() || "";
+        const description = job.description?.toLowerCase() || "";
+        const jobLocation = job.location?.toLowerCase() || "";
+        const matchesSearch = title.includes(search) || description.includes(search);
+        const matchesLocation = location === "" || jobLocation.includes(location);
+        return matchesSearch && matchesLocation;
+      });
+      renderJobs(filtered);
+    }
+
+    // Apply job (fixed to block filled jobs)
+    function applyJob(jobId, title, company, location) {
+      const job = allJobs.find(j => j._id === jobId);
+      if (job && job.status === "Filled") {
+        alert("You cannot apply for this job. It is already filled.");
+        return;
+      }
+
+      const coverLetter = prompt("Enter your cover letter:");
+      if (!coverLetter) return;
+
+      let key = `applications_${currentUserEmail}`;
+      let applications = JSON.parse(localStorage.getItem(key)) || [];
+      const alreadyApplied = applications.some(app => app.jobId === jobId);
+
+      if (alreadyApplied) {
+        alert("You already applied for this job.");
+        return;
+      }
+
+      const appData = { jobId, title, company, location, coverLetter, userEmail: currentUserEmail };
+
+      applications.push(appData);
+      localStorage.setItem(key, JSON.stringify(applications));
+
+      let allApps = JSON.parse(localStorage.getItem("applications_all")) || [];
+      allApps.push(appData);
+      localStorage.setItem("applications_all", JSON.stringify(allApps));
+
+      alert("Application submitted!");
+    }
+
+    function closeApplications() {
+      document.getElementById("applicationsSection").style.display = "none";
+    }
+  </script>
+</body>
+</html>
