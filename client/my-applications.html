@@ -46,7 +46,9 @@
           </div>
         `).join('');
       }
-      fetch('http://localhost:5000/api/applications/my-applications', {
+
+      // ✅ Updated fetch call to Render backend
+      fetch('https://jobportal-2knb.onrender.com/api/applications/my-applications', {
         method: "GET",
         headers: {
           'Authorization': `Bearer ${token}`,   // ✅ fixed
