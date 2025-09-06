@@ -42,7 +42,8 @@
       }
 
       try {
-        const response = await fetch("http://localhost:5000/api/users/register", {
+        // ✅ Updated fetch call to Render backend
+        const response = await fetch("https://jobportal-2knb.onrender.com/api/users/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, username, email, password, role })
