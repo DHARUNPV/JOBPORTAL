@@ -13,7 +13,9 @@ form input, form select, form textarea {
   display: block;
   margin: 10px 0;
   padding: 8px;
-  width: 300px;
+  width: 100%;           /* ✅ full width on mobile */
+  max-width: 300px;      /* ✅ keeps same look on laptop */
+  box-sizing: border-box;
 }
 
 button {
@@ -41,6 +43,7 @@ button:hover {
   border: 1px solid #ccc;
   margin-bottom: 10px;
 }
+
 .top-right-btn {
   position: absolute;
   top: 20px;      /* distance from top */
@@ -55,4 +58,26 @@ button:hover {
 
 .top-right-btn:hover {
   background-color: #0056b3;
+}
+
+/* ✅ Mobile fix */
+@media (max-width: 600px) {
+  body {
+    font-size: 16px;
+    padding: 10px;
+  }
+
+  h1, h2 {
+    text-align: center;
+    font-size: 1.3rem;
+  }
+
+  form {
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  button {
+    width: 100%;   /* ✅ button full width on mobile */
+  }
 }
