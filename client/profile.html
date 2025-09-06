@@ -32,7 +32,7 @@
   </form>
 
   <script>
-    document.getElementById("profileForm").addEventListener("submit", function(e) {
+    document.getElementById("profileForm").addEventListener("submit", async function(e) {
       e.preventDefault();
 
       // Collect profile details
@@ -45,11 +45,37 @@
         education: document.getElementById("education").value
       };
 
-      // Store in localStorage
+      // ✅ Store in localStorage
       localStorage.setItem("userProfile", JSON.stringify(profile));
 
-      // Redirect to dashboard
-      window.location.href = "dashboard.html";
+      // ✅ Also send to backend
+      const token = localStorage.getItem("token"); // make sure user is logged in
+      if (!token) {
+        alert("⚠️ You must be logged in to save your profile online.");
+        return;
+      }
+
+      try {
+        const res = await fetch("https://jobportal-2knb.onrender.com/api/users/profile", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify(profile)
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          alert("✅ Profile saved successfully!");
+          window.location.href = "dashboard.html";
+        } else {
+          alert("❌ Failed to save profile: " + (data.message || "Unknown error"));
+        }
+      } catch (err) {
+        alert("Error saving profile: " + err.message);
+      }
     });
   </script>
 </body>
