@@ -12,8 +12,6 @@
   <div id="applicationsList"></div>
 
   <script>
-    const API_BASE = "https://jobportal-2knb.onrender.com/api";
-
     document.addEventListener('DOMContentLoaded', () => {
       const token = localStorage.getItem('token');
 
@@ -22,57 +20,57 @@
         return;
       }
 
-      // Logout
+      // Logout button
       document.getElementById('logoutBtn').addEventListener('click', () => {
         localStorage.removeItem('token');
-        localStorage.removeItem('currentUser');
         window.location.href = 'login.html';
       });
 
-      // Display applications
+      // Function to display applications
       function displayApplications(applications) {
         const container = document.getElementById('applicationsList');
 
-        if (!applications || applications.length === 0) {
+        if (!applications.length) {
           container.innerHTML = '<p>You have not applied to any jobs yet.</p>';
           return;
         }
 
         container.innerHTML = applications.map(app => `
           <div class="application-card">
-            <h3>${app.job?.title || 'Untitled Job'}</h3>
-            <p><strong>Company:</strong> ${app.job?.company || 'N/A'}</p>
-            <p><strong>Location:</strong> ${app.job?.location || 'N/A'}</p>
-            <p><strong>Status:</strong> ${app.status || 'Pending'}</p>
+            <h3>${app.job.title}</h3>
+            <p><strong>Company:</strong> ${app.job.company || 'N/A'}</p>
+            <p><strong>Location:</strong> ${app.job.location || 'N/A'}</p>
+            <p><strong>Status:</strong> ${app.status}</p>
             <p><strong>Applied on:</strong> ${new Date(app.appliedAt).toLocaleDateString()}</p>
             <p><strong>Cover Letter:</strong> ${app.coverLetter || 'None'}</p>
           </div>
         `).join('');
       }
 
-      // Fetch user's applications from Render backend
-      async function loadApplications() {
-        try {
-          const res = await fetch(`${API_BASE}/applications/my-applications`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (!res.ok) throw new Error(`Server error: ${res.status}`);
-
-          const data = await res.json();
-          displayApplications(data);
-
-        } catch (err) {
-          console.error('Error fetching applications:', err);
-          document.getElementById('applicationsList').innerHTML =
-            '<p>Error loading your applications. Please try again later.</p>';
+      // ✅ Updated fetch call to Render backend
+      fetch('https://jobportal-2knb.onrender.com/api/applications/my-applications', {
+        method: "GET",
+        headers: {
+          'Authorization': `Bearer ${token}`,   // ✅ fixed
+          'Content-Type': 'application/json'
         }
-      }
+      })
+      .then(async (res) => {
+        const text = await res.text();  // get raw response text
 
-      loadApplications();
+        try {
+          const data = JSON.parse(text);  // try to parse JSON
+          displayApplications(data);
+        } catch (err) {
+          console.error('Received non-JSON response from server:');
+          console.log(text);  // log the actual response text (probably an HTML page)
+          alert('Error: Received unexpected response from server. Check console for details.');
+        }
+      })
+      .catch(err => {
+        console.error('Fetch error:', err);
+        document.getElementById('applicationsList').innerHTML = '<p>Error loading your applications.</p>';
+      });
     });
   </script>
 </body>
