@@ -189,7 +189,7 @@
         document.getElementById('jobsList').innerHTML = '<p>Error loading jobs.</p>';
       });
 
-      // View Applications from backend
+      // View Applications
       document.getElementById("viewApplicationsBtn").addEventListener("click", async () => {
         try {
           const res = await fetch(`${API_BASE}/applications/my-applications`, {
@@ -226,6 +226,7 @@
       if (!jobs.length) { jobsList.innerHTML = '<p>No jobs available right now.</p>'; return; }
 
       const token = localStorage.getItem('token');
+      const currentUserEmail = localStorage.getItem('currentUser');
 
       jobs.forEach(job => {
         const jobDiv = document.createElement('div');
@@ -240,10 +241,9 @@
       });
     }
 
-    // ✅ Apply Job using backend
     async function applyJob(jobId) {
       const token = localStorage.getItem('token');
-      if (!token) return alert('Please login first');
+      if (!token) return alert('Login first');
 
       const coverLetter = prompt("Enter your cover letter:");
       if (!coverLetter) return;
@@ -251,23 +251,14 @@
       try {
         const res = await fetch(`${API_BASE}/applications`, {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json', 
-            'Authorization': `Bearer ${token}` 
-          },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ jobId, coverLetter })
         });
-
         const data = await res.json();
-
-        if (res.ok) {
-          alert('Application submitted successfully!');
-        } else {
-          alert(data.message || 'Failed to apply');
-        }
+        if (res.ok) alert('Application submitted!');
+        else alert(data.message || 'Failed to apply');
       } catch (err) {
-        console.error('Error applying for job:', err);
-        alert('Error submitting application. Please try again.');
+        console.error('Error applying:', err);
       }
     }
 
