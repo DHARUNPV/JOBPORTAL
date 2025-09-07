@@ -1,3 +1,4 @@
+// server/models/Application.js
 const mongoose = require('mongoose');
 
 const applicationSchema = new mongoose.Schema({
@@ -12,13 +13,7 @@ const applicationSchema = new mongoose.Schema({
     required: true
   },
   coverLetter: {
-    type: String,
-    required: true
-  },
-  status: {
-    type: String,
-    enum: ['Applied', 'Under Review', 'Accepted', 'Rejected'],
-    default: 'Applied'
+    type: String
   },
   appliedAt: {
     type: Date,
