@@ -19,7 +19,9 @@
       color: white;
       cursor: pointer;
     }
-    .top-right-btn:hover { background: #0056b3; }
+    .top-right-btn:hover {
+      background: #0056b3;
+    }
   </style>
 </head>
 <body>
@@ -27,7 +29,7 @@
   <button id="logoutBtn">Logout</button>
   <button id="viewProfileBtn" class="top-right-btn">My Profile</button>
 
-  <!-- Profile Section -->
+  <!-- ✅ Profile Section -->
   <div id="profileSection" style="display:none; margin-top:60px; border:1px solid #ccc; padding:15px;">
     <h2>My Profile</h2>
 
@@ -78,13 +80,15 @@
   </section>
 
   <script>
-    const API_BASE = 'https://jobportal-2knb.onrender.com/api';
     let allJobs = []; 
     let currentUserEmail = localStorage.getItem("currentUser");
 
     document.addEventListener('DOMContentLoaded', () => {
       const token = localStorage.getItem('token');
-      if (!token || !currentUserEmail) window.location.href = 'login.html';
+      if (!token || !currentUserEmail) {
+        window.location.href = 'login.html';
+        return;
+      }
 
       // Logout
       document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -106,77 +110,78 @@
       const pExperience = document.getElementById("pExperience");
       const pEducation = document.getElementById("pEducation");
 
-      viewProfileBtn.addEventListener("click", async () => {
+      // Open profile section
+      viewProfileBtn.addEventListener("click", () => {
         profileSection.style.display = "block";
 
-        try {
-          const res = await fetch(`${API_BASE}/users/profile`, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const data = await res.json();
+        const users = JSON.parse(localStorage.getItem("users")) || {};
+        const profile = users[currentUserEmail]?.profile;
 
-          if (res.ok) {
-            pName.textContent = data.name || "";
-            pEmail.textContent = data.email || currentUserEmail;
-            pPhone.textContent = data.phone || "Not provided";
-            pSkills.textContent = data.skills || "Not provided";
-            pExperience.textContent = data.experience || "0";
-            pEducation.textContent = data.education || "Not provided";
-            profileForm.style.display = "none";
-            viewProfile.style.display = "block";
-          } else {
-            profileForm.style.display = "block";
-            viewProfile.style.display = "none";
-          }
-        } catch (err) {
-          console.error('Error fetching profile:', err);
+        if (profile) {
+          // show profile
+          pName.textContent = profile.name || "";
+          pEmail.textContent = currentUserEmail;
+          pPhone.textContent = profile.phone || "Not provided";
+          pSkills.textContent = profile.skills || "Not provided";
+          pExperience.textContent = profile.experience || "0";
+          pEducation.textContent = profile.education || "Not provided";
+
+          profileForm.style.display = "none";
+          viewProfile.style.display = "block";
+        } else {
+          // show empty form
+          profileForm.style.display = "block";
+          viewProfile.style.display = "none";
         }
       });
 
-      profileForm.addEventListener("submit", async (e) => {
+      // Save profile
+      profileForm.addEventListener("submit", (e) => {
         e.preventDefault();
-        const profileData = {
-          name: document.getElementById("profileName").value.trim(),
-          phone: document.getElementById("profilePhone").value.trim(),
-          skills: document.getElementById("profileSkills").value.trim(),
-          experience: document.getElementById("profileExperience").value.trim(),
-          education: document.getElementById("profileEducation").value.trim()
-        };
 
-        try {
-          const res = await fetch(`${API_BASE}/users/profile`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify(profileData)
-          });
+        const name = document.getElementById("profileName").value.trim();
+        const phone = document.getElementById("profilePhone").value.trim();
+        const skills = document.getElementById("profileSkills").value.trim();
+        const experience = document.getElementById("profileExperience").value.trim();
+        const education = document.getElementById("profileEducation").value.trim();
 
-          const data = await res.json();
-          if (res.ok) {
-            alert("Profile saved!");
-            pName.textContent = data.name;
-            pEmail.textContent = data.email || currentUserEmail;
-            pPhone.textContent = data.phone || "Not provided";
-            pSkills.textContent = data.skills || "Not provided";
-            pExperience.textContent = data.experience || "0";
-            pEducation.textContent = data.education || "Not provided";
-            profileForm.style.display = "none";
-            viewProfile.style.display = "block";
-          } else {
-            alert(data.message || "Failed to save profile");
-          }
-        } catch (err) {
-          console.error('Error saving profile:', err);
-        }
+        let users = JSON.parse(localStorage.getItem("users")) || {};
+        if (!users[currentUserEmail]) users[currentUserEmail] = {};
+        users[currentUserEmail].profile = { name, phone, skills, experience, education };
+
+        localStorage.setItem("users", JSON.stringify(users));
+
+        alert("Profile saved!");
+        profileForm.style.display = "none";
+        viewProfile.style.display = "block";
+
+        // update display
+        pName.textContent = name;
+        pEmail.textContent = currentUserEmail;
+        pPhone.textContent = phone || "Not provided";
+        pSkills.textContent = skills || "Not provided";
+        pExperience.textContent = experience || "0";
+        pEducation.textContent = education || "Not provided";
       });
 
-      document.getElementById("editProfileBtn").addEventListener("click", async () => {
+      // Edit profile
+      document.getElementById("editProfileBtn").addEventListener("click", () => {
+        const users = JSON.parse(localStorage.getItem("users")) || {};
+        const profile = users[currentUserEmail]?.profile || {};
+
+        document.getElementById("profileName").value = profile.name || "";
+        document.getElementById("profilePhone").value = profile.phone || "";
+        document.getElementById("profileSkills").value = profile.skills || "";
+        document.getElementById("profileExperience").value = profile.experience || "";
+        document.getElementById("profileEducation").value = profile.education || "";
+
         profileForm.style.display = "block";
         viewProfile.style.display = "none";
       });
 
       // === JOBS SECTION ===
-      fetch(`${API_BASE}/jobs`, {
+      fetch('https://jobportal-2knb.onrender.com/api/jobs', {
+        method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
       })
       .then(res => res.json())
@@ -190,43 +195,39 @@
       });
 
       // View Applications
-      document.getElementById("viewApplicationsBtn").addEventListener("click", async () => {
-        try {
-          const res = await fetch(`${API_BASE}/applications/my-applications`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const applications = await res.json();
-          const list = document.getElementById("applicationsList");
-          list.innerHTML = "";
+      document.getElementById("viewApplicationsBtn").addEventListener("click", () => {
+        const apps = JSON.parse(localStorage.getItem(`applications_${currentUserEmail}`)) || [];
+        const list = document.getElementById("applicationsList");
+        list.innerHTML = "";
 
-          if (!applications.length) list.innerHTML = "<p>No applications found.</p>";
-          else {
-            applications.forEach(app => {
-              const div = document.createElement("div");
-              div.classList.add("job-card");
-              div.innerHTML = `
-                <h3>${app.job.title}</h3>
-                <p><strong>${app.job.company}</strong> - ${app.job.location}</p>
-                <p><em>Cover Letter:</em> ${app.coverLetter}</p>
-                <p><strong>Status:</strong> ${app.status}</p>
-              `;
-              list.appendChild(div);
-            });
-          }
-          document.getElementById("applicationsSection").style.display = "block";
-        } catch (err) {
-          console.error('Error fetching applications:', err);
+        if (apps.length === 0) {
+          list.innerHTML = "<p>No applications found.</p>";
+        } else {
+          apps.forEach(app => {
+            const div = document.createElement("div");
+            div.classList.add("job-card");
+            div.innerHTML = `
+              <h3>${app.title}</h3>
+              <p><strong>${app.company}</strong> - ${app.location}</p>
+              <p><em>Cover Letter:</em> ${app.coverLetter}</p>
+            `;
+            list.appendChild(div);
+          });
         }
+
+        document.getElementById("applicationsSection").style.display = "block";
       });
     });
 
+    // Render jobs
     function renderJobs(jobs) {
       const jobsList = document.getElementById('jobsList');
       jobsList.innerHTML = '';
-      if (!jobs.length) { jobsList.innerHTML = '<p>No jobs available right now.</p>'; return; }
 
-      const token = localStorage.getItem('token');
-      const currentUserEmail = localStorage.getItem('currentUser');
+      if (!jobs.length) {
+        jobsList.innerHTML = '<p>No jobs available right now.</p>';
+        return;
+      }
 
       jobs.forEach(job => {
         const jobDiv = document.createElement('div');
@@ -235,33 +236,13 @@
           <h3>${job.title}</h3>
           <p><strong>${job.company}</strong> - ${job.location}</p>
           <p>${job.description}</p>
-          <button onclick="applyJob('${job._id}')">Apply</button>
+          <button onclick="applyJob('${job._id}', '${job.title}', '${job.company}', '${job.location}')">Apply</button>
         `;
         jobsList.appendChild(jobDiv);
       });
     }
 
-    async function applyJob(jobId) {
-      const token = localStorage.getItem('token');
-      if (!token) return alert('Login first');
-
-      const coverLetter = prompt("Enter your cover letter:");
-      if (!coverLetter) return;
-
-      try {
-        const res = await fetch(`${API_BASE}/applications`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ jobId, coverLetter })
-        });
-        const data = await res.json();
-        if (res.ok) alert('Application submitted!');
-        else alert(data.message || 'Failed to apply');
-      } catch (err) {
-        console.error('Error applying:', err);
-      }
-    }
-
+    // Filter jobs
     function filterJobs() {
       const search = document.getElementById("searchInput").value.toLowerCase();
       const location = document.getElementById("locationFilter").value.toLowerCase();
@@ -269,13 +250,48 @@
         const title = job.title?.toLowerCase() || "";
         const description = job.description?.toLowerCase() || "";
         const jobLocation = job.location?.toLowerCase() || "";
-        return (title.includes(search) || description.includes(search)) &&
-               (location === "" || jobLocation.includes(location));
+        const matchesSearch = title.includes(search) || description.includes(search);
+        const matchesLocation = location === "" || jobLocation.includes(location);
+        return matchesSearch && matchesLocation;
       });
       renderJobs(filtered);
     }
 
-    function closeApplications() { document.getElementById("applicationsSection").style.display = "none"; }
+    // Apply job (fixed to block filled jobs)
+    function applyJob(jobId, title, company, location) {
+      const job = allJobs.find(j => j._id === jobId);
+      if (job && job.status === "Filled") {
+        alert("You cannot apply for this job. It is already filled.");
+        return;
+      }
+
+      const coverLetter = prompt("Enter your cover letter:");
+      if (!coverLetter) return;
+
+      let key = `applications_${currentUserEmail}`;
+      let applications = JSON.parse(localStorage.getItem(key)) || [];
+      const alreadyApplied = applications.some(app => app.jobId === jobId);
+
+      if (alreadyApplied) {
+        alert("You already applied for this job.");
+        return;
+      }
+
+      const appData = { jobId, title, company, location, coverLetter, userEmail: currentUserEmail };
+
+      applications.push(appData);
+      localStorage.setItem(key, JSON.stringify(applications));
+
+      let allApps = JSON.parse(localStorage.getItem("applications_all")) || [];
+      allApps.push(appData);
+      localStorage.setItem("applications_all", JSON.stringify(allApps));
+
+      alert("Application submitted!");
+    }
+
+    function closeApplications() {
+      document.getElementById("applicationsSection").style.display = "none";
+    }
   </script>
 </body>
 </html>
