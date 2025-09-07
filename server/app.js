@@ -1,8 +1,10 @@
+// server/app.js
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
 const connectDB = require('./config/db');
+const applicationRoutes = require('./routes/applicationRoutes');
 
 dotenv.config();
 connectDB();
@@ -14,18 +16,20 @@ app.use(express.json());
 // API routes
 app.use('/api/jobs', require('./routes/jobRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
-app.use('/api/applications', require('./routes/applicationRoutes'));
+app.use('/api/applications', applicationRoutes);
 
-// 404 handler for unknown API
-app.use('/api/*', (req, res) => {
+// 404 handler for unknown API routes
+app.use('/api', (req, res) => {
   res.status(404).json({ message: 'API route not found' });
 });
 
-// Serve frontend
+// Serve client static files
 app.use(express.static(path.join(__dirname, '../client')));
+
+// Catch-all for frontend SPA
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/index.html'));
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
