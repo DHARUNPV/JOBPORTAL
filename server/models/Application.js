@@ -12,7 +12,13 @@ const applicationSchema = new mongoose.Schema({
     required: true
   },
   coverLetter: {
-    type: String
+    type: String,
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['Applied', 'Under Review', 'Accepted', 'Rejected'],
+    default: 'Applied'
   },
   appliedAt: {
     type: Date,
